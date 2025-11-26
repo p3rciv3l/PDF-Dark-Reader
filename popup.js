@@ -16,9 +16,9 @@ const MODIFIER_KEYS = new Set(['⌘', '⌃', '⌥', '⇧', 'command', 'cmd', 'ct
 
 let state = {
   globalEnabled: false,
-  globalMode: 'invert',
+  globalMode: 'system',
   siteOverride: false,
-  currentMode: 'invert',
+  currentMode: 'system',
   effectivelyEnabled: false,
   isPDF: false
 };
@@ -163,7 +163,7 @@ function openChromeShortcuts() {
 function refresh() {
   chrome.storage.sync.get(['globalEnabled', 'globalMode'], function(r) {
     state.globalEnabled = r.globalEnabled === true;
-    state.globalMode = r.globalMode || 'invert';
+    state.globalMode = r.globalMode || 'system';
     state.currentMode = state.globalMode;
     updateUI();
   });

@@ -1,8 +1,8 @@
 (() => {
   let globalEnabled = false;
-  let globalMode = 'invert'; // Default to invert
+  let globalMode = 'system'; // Default to system
   let siteOverride = false;
-  let siteMode = 'invert';
+  let siteMode = 'system';
   
   const siteKey = location.hostname + location.pathname;
   
@@ -146,12 +146,12 @@
   // Init
   chrome.storage.sync.get(['globalEnabled', 'globalMode', 'site_' + siteKey], (r) => {
     globalEnabled = r.globalEnabled === true;
-    globalMode = r.globalMode || 'invert';
+    globalMode = r.globalMode || 'system';
     
     const siteData = r['site_' + siteKey];
     if (siteData) {
       siteOverride = true;
-      siteMode = siteData.mode || 'invert';
+      siteMode = siteData.mode || 'system';
     }
     
     if (isPDF()) update();
