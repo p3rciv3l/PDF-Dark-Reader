@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { font-size: 14px; --bg: #ffffff; --bg2: #e8e8e8; --fg: #1a1a1a; --fg2: #1a1a1a; --acc: #ff6b35; --bdr: #00000020; --key-border: #000000; --mod-bg: #e0e0e0; }
+    body { width: 18rem; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: .75rem; line-height: 1.5; font-weight: 400; transition: background .3s ease; overflow: hidden; }
+    
+    .screen { display: none; }
+    .screen.active { display: block; }
+    
+    /* Header */
+    .hdr { padding: 1.25rem; text-align: center; border-bottom: 1px solid var(--bdr); }
+    h1 { font-size: .7rem; font-weight: 600; letter-spacing: .08rem; text-transform: uppercase; }
+    .status { display: inline-flex; align-items: center; gap: .4rem; margin-top: .75rem; padding: .35rem .75rem; background: var(--bg2); border-radius: 1rem; font-size: .6rem; text-transform: uppercase; letter-spacing: .04rem; }
+    .dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--fg2); transition: all .2s; }
+    .dot.on { background: #4ade80; box-shadow: 0 0 .5rem #4ade80; }
+    .dot.off { background: #ef4444; }
+    
+    /* Sections */
+    .sec { padding: 1rem 1.25rem; border-bottom: 1px solid var(--bdr); }
+    .sec:last-child { border-bottom: none; }
+    .lbl { font-size: .6rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08rem; color: var(--fg2); margin-bottom: .75rem; }
+    
+    /* Toggles */
+    .toggles { display: flex; flex-direction: column; gap: .5rem; }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: .5rem .75rem; background: var(--bg2); border-radius: .5rem; }
+    .toggle-row span { font-size: .7rem; }
+    .toggle-row.hidden { display: none; }
+    .switch { position: relative; width: 2.5rem; height: 1.4rem; flex-shrink: 0; cursor: pointer; }
+    .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .slider { position: absolute; inset: 0; background: var(--bdr); border-radius: 1rem; cursor: pointer; transition: .2s; }
+    .slider:before { content: ''; position: absolute; width: 1rem; height: 1rem; left: .2rem; bottom: .2rem; background: var(--fg); border-radius: 50%; transition: .2s; }
+    input:checked + .slider { background: var(--acc); }
+    input:checked + .slider:before { transform: translateX(1.1rem); background: #fff; }
+    
+    /* Mode buttons */
+    .modes { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .btn { padding: .75rem .5rem; background: var(--bg2); border: 1px solid var(--bdr); border-radius: .5rem; color: var(--fg); font-size: .6rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04rem; cursor: pointer; transition: all .15s; }
+    .btn:hover, .btn.on { background: var(--acc); border-color: var(--acc); color: #fff; }
+    
+    /* Nav button */
+    .nav-btn { width: 100%; padding: .7rem; background: var(--bg2); border: 1px solid var(--bdr); border-radius: .5rem; color: var(--fg); font-size: .6rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
+    .nav-btn:hover { border-color: var(--acc); }
+    .nav-btn .arrow { font-size: .75rem; font-weight: 400; }
+    
+    /* Advanced screen header */
+    .back-btn { background: none; border: none; color: var(--fg); font-size: .6rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: .3rem; padding: .5rem 0; text-transform: uppercase; letter-spacing: .04rem; }
+    .back-btn:hover { color: var(--acc); }
+    .adv-hdr { padding: 1rem 1.25rem; border-bottom: 1px solid var(--bdr); }
+    .adv-hdr h2 { font-size: .7rem; font-weight: 600; letter-spacing: .08rem; text-transform: uppercase; margin-top: .25rem; }
+    
+    /* Keybind rows */
+    .keybind-row { 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      padding: .75rem 0; 
+      border-bottom: 1px solid var(--bdr);
+    }
+    .keybind-row:last-of-type { border-bottom: none; }
+    .keybind-label { font-size: .7rem; color: var(--fg); font-weight: 500; width: 5rem; flex-shrink: 0; }
+    .keybind-display { 
+      display: flex; 
+      align-items: center; 
+      gap: .5rem; 
+      cursor: pointer;
+    }
+    .keybind-display.empty { opacity: 0.5; }
+    .keybind-display:hover .not-set { color: var(--acc); }
+    .not-set { 
+      font-size: .6rem; 
+      color: var(--fg); 
+      opacity: 0.5; 
+      font-style: italic;
+      padding: .4rem .6rem;
+      background: var(--bg2);
+      border: 2px dashed var(--bdr);
+      border-radius: .5rem;
+    }
+    
+    /* Key boxes */
+    .key { 
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: .45rem .6rem; 
+      background: var(--acc);
+      border: 2px solid var(--key-border);
+      border-radius: .4rem; 
+      font-size: .85rem;
+      font-weight: 600;
+      min-width: 2rem;
+      min-height: 2rem;
+      color: #fff;
+      transition: all .15s;
+    }
+    .key.mod { 
+      background: var(--mod-bg);
+      color: var(--fg);
+      border: 2px solid var(--key-border);
+    }
+    .keybind-display:hover .key {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,.15);
+    }
+    .keybind-display:hover .key.mod {
+      border-color: var(--fg);
+    }
+    .keybind-display:hover .key:not(.mod) {
+      box-shadow: 0 4px 12px rgba(255,107,53,.4);
+    }
+    
+    /* Chrome button */
+    .chrome-btn {
+      width: 100%;
+      margin-top: .75rem;
+      padding: .6rem .75rem;
+      background: var(--bg2);
+      border: 1px solid var(--bdr);
+      border-radius: .5rem;
+      color: var(--fg);
+      font-size: .6rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .04rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all .15s;
+    }
+    .chrome-btn:hover { border-color: var(--acc); background: var(--acc); color: #fff; }
+    .chrome-btn .arrow { font-size: .75rem; font-weight: 400; }
+  </style>
+</head>
+<body>
+  <!-- Main Screen -->
+  <div class="screen active" id="mainScreen">
+    <div class="hdr">
+      <h1>PDF Inverter</h1>
+      <div class="status"><span class="dot" id="dot"></span><span id="status">Ready</span></div>
+    </div>
+    
+    <div class="sec">
+      <div class="lbl">Controls</div>
+      <div class="toggles">
+        <div class="toggle-row">
+          <span>Extension</span>
+          <div class="switch" id="globalSwitch"><input type="checkbox" id="global" checked><span class="slider"></span></div>
+        </div>
+        <div class="toggle-row hidden" id="siteRow">
+          <span>This PDF</span>
+          <div class="switch" id="siteSwitch"><input type="checkbox" id="site"><span class="slider"></span></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="sec">
+      <div class="lbl">Mode</div>
+      <div class="modes">
+        <button class="btn" data-m="invert">Invert</button>
+        <button class="btn" data-m="system">System</button>
+      </div>
+    </div>
+    
+    <div class="sec">
+      <button class="nav-btn" id="openAdvanced">
+        <span>Shortcuts</span>
+        <span class="arrow">→</span>
+      </button>
+    </div>
+  </div>
+  
+  <!-- Advanced Screen -->
+  <div class="screen" id="advancedScreen">
+    <div class="adv-hdr">
+      <button class="back-btn" id="backBtn">← Back</button>
+      <h2>Shortcuts</h2>
+    </div>
+    
+    <div class="sec">
+      <div class="keybind-row">
+        <span class="keybind-label">Extension</span>
+        <div class="keybind-display" id="keybindGlobal">
+          <span class="not-set">Loading...</span>
+        </div>
+      </div>
+      
+      <div class="keybind-row">
+        <span class="keybind-label">This PDF</span>
+        <div class="keybind-display" id="keybindSite">
+          <span class="not-set">Loading...</span>
+        </div>
+      </div>
+      
+      <button class="chrome-btn" id="openChromeShortcuts">
+        Chrome Settings
+        <span class="arrow">→</span>
+      </button>
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
