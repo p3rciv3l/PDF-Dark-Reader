@@ -201,8 +201,13 @@ document.addEventListener('DOMContentLoaded', function() {
     b.addEventListener('click', function() {
       state.currentMode = b.dataset.m;
       sendToTab({ action: 'setMode', mode: b.dataset.m });
-      chrome.storage.sync.set({ globalMode: b.dataset.m });
-      updateUI();
+      // Only save to globalMode if site override is not enabled
+      // (content.js will handle saving to site storage if override is enabled)
+      if (!state.siteOverride) {
+        chrome.storage.sync.set({ globalMode: b.dataset.m });
+      }
+      // Refresh after a short delay to get updated state from content script
+      setTimeout(refresh, 100);
     });
   });
 
@@ -210,7 +215,14 @@ document.addEventListener('DOMContentLoaded', function() {
     state.globalEnabled = !state.globalEnabled;
     $('#global').checked = state.globalEnabled;
     chrome.storage.sync.set({ globalEnabled: state.globalEnabled });
-    sendToTab({ action: 'setGlobalEnabled', enabled: state.globalEnabled });
+    // Broadcast to all tabs, not just the current one
+    chrome.tabs.query({}, function(tabs) {
+      tabs.forEach(function(tab) {
+        chrome.tabs.sendMessage(tab.id, { action: 'setGlobalEnabled', enabled: state.globalEnabled }, function() {
+          if (chrome.runtime.lastError) { /* ignore */ }
+        });
+      });
+    });
     updateTheme();
     setTimeout(refresh, 100);
   });

@@ -29,8 +29,13 @@ chrome.commands.onCommand.addListener(function(command) {
       chrome.storage.sync.get(['globalEnabled'], function(r) {
         var newEnabled = !(r.globalEnabled === true);
         chrome.storage.sync.set({ globalEnabled: newEnabled });
-        chrome.tabs.sendMessage(tabs[0].id, { action: 'setGlobalEnabled', enabled: newEnabled }, function() {
-          if (chrome.runtime.lastError) { /* ignore */ }
+        // Broadcast to all tabs, not just the active one
+        chrome.tabs.query({}, function(allTabs) {
+          allTabs.forEach(function(tab) {
+            chrome.tabs.sendMessage(tab.id, { action: 'setGlobalEnabled', enabled: newEnabled }, function() {
+              if (chrome.runtime.lastError) { /* ignore */ }
+            });
+          });
         });
         // Notify popup to refresh
         chrome.runtime.sendMessage({ action: 'stateChanged' }).catch(() => {});
