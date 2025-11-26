@@ -2,6 +2,9 @@
 
 A Chrome extension that inverts PDF colors based on manual or system settings for dark mode viewing.
 
+## Demo
+
+![Demo](./pdf_dark_reader_demo.gif)
 ## Installation
 
 1. Open `chrome://extensions/`

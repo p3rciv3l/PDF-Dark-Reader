@@ -82,10 +82,14 @@
       siteOverride = msg.enabled;
       if (siteOverride) {
         siteMode = getCurrentMode();
-        chrome.storage.sync.set({ ['site_' + siteKey]: { mode: siteMode } });
+        chrome.storage.sync.set({ ['site_' + siteKey]: { mode: siteMode } }, () => {
+          chrome.runtime.sendMessage({ action: 'stateChanged' }).catch(() => {});
+        });
         toast('Custom settings for this PDF');
       } else {
-        chrome.storage.sync.remove('site_' + siteKey);
+        chrome.storage.sync.remove('site_' + siteKey, () => {
+          chrome.runtime.sendMessage({ action: 'stateChanged' }).catch(() => {});
+        });
         toast('Using global settings');
       }
       update();
@@ -94,10 +98,16 @@
       siteOverride = !siteOverride;
       if (siteOverride) {
         siteMode = getCurrentMode();
-        chrome.storage.sync.set({ ['site_' + siteKey]: { mode: siteMode } });
+        chrome.storage.sync.set({ ['site_' + siteKey]: { mode: siteMode } }, () => {
+          // Notify popup to refresh after storage update
+          chrome.runtime.sendMessage({ action: 'stateChanged' }).catch(() => {});
+        });
         toast('Custom settings for this PDF');
       } else {
-        chrome.storage.sync.remove('site_' + siteKey);
+        chrome.storage.sync.remove('site_' + siteKey, () => {
+          // Notify popup to refresh after storage update
+          chrome.runtime.sendMessage({ action: 'stateChanged' }).catch(() => {});
+        });
         toast('Using global settings');
       }
       update();

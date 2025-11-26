@@ -229,6 +229,31 @@ document.addEventListener('DOMContentLoaded', function() {
   
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
 
+  // Listen for storage changes (when keyboard shortcuts update storage)
+  chrome.storage.onChanged.addListener(function(changes, areaName) {
+    if (areaName === 'sync') {
+      // Refresh on any storage change (globalEnabled, globalMode, or site overrides)
+      refresh();
+    }
+  });
+
+  // Listen for messages from background script when shortcuts are triggered
+  chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+    if (msg.action === 'stateChanged') {
+      refresh();
+    }
+  });
+
+  // Refresh when popup becomes visible
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+      refresh();
+    }
+  });
+
+  // Also refresh when window gains focus
+  window.addEventListener('focus', refresh);
+
   refresh();
   loadShortcuts();
 });

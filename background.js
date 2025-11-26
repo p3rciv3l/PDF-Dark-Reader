@@ -32,10 +32,16 @@ chrome.commands.onCommand.addListener(function(command) {
         chrome.tabs.sendMessage(tabs[0].id, { action: 'setGlobalEnabled', enabled: newEnabled }, function() {
           if (chrome.runtime.lastError) { /* ignore */ }
         });
+        // Notify popup to refresh
+        chrome.runtime.sendMessage({ action: 'stateChanged' }).catch(() => {});
       });
     } else if (command === 'toggle-site') {
       chrome.tabs.sendMessage(tabs[0].id, { action: 'toggleSiteOverride' }, function() {
         if (chrome.runtime.lastError) { /* ignore */ }
+        // Notify popup to refresh after a short delay to allow storage update
+        setTimeout(() => {
+          chrome.runtime.sendMessage({ action: 'stateChanged' }).catch(() => {});
+        }, 100);
       });
     }
   });
