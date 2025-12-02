@@ -56,16 +56,23 @@
 
   const update = () => {
     const style = getStyle();
+    
+    // Clear filter first
+    style.textContent = '';
+    
+    // Only apply filter if conditions are met
+    if (!isPDF()) return;
+    
     const mode = getCurrentMode();
     const filter = getEffectiveFilter(mode);
+    
+    if (filter === 'none') return;
     
     // If site override is enabled, apply filter independently
     // Otherwise, require global extension to be ON
     const shouldApply = siteOverride || globalEnabled;
-    if (shouldApply && isPDF() && filter !== 'none') {
+    if (shouldApply) {
       style.textContent = `embed, pdf-viewer { filter: ${filter} !important; }`;
-    } else {
-      style.textContent = '';
     }
   };
 
@@ -86,6 +93,11 @@
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.action === 'setGlobalEnabled') {
       globalEnabled = msg.enabled;
+      // When turning extension OFF, clear any filters immediately
+      if (!globalEnabled) {
+        const style = getStyle();
+        style.textContent = '';
+      }
       update();
       toast(globalEnabled ? 'Extension ON' : 'Extension OFF');
     }
@@ -134,7 +146,9 @@
         });
       } else {
         globalMode = msg.mode;
-        chrome.storage.sync.set({ globalMode: globalMode });
+        chrome.storage.sync.set({ globalMode: globalMode }, () => {
+          chrome.runtime.sendMessage({ action: 'stateChanged' }).catch(() => {});
+        });
       }
       update();
       toast('Mode: ' + msg.mode);
@@ -189,15 +203,28 @@
 
   // Init
   chrome.storage.sync.get(['globalEnabled', 'globalMode', 'site_' + siteKey], (r) => {
+    // Default to false if not set
     globalEnabled = r.globalEnabled === true;
     globalMode = r.globalMode || 'system';
     
+    // Only load site override if it exists in storage (user explicitly enabled it)
     const siteData = r['site_' + siteKey];
-    if (siteData) {
+    if (siteData && siteData.mode) {
       siteOverride = true;
       siteMode = siteData.mode || 'system';
+    } else {
+      // Explicitly set to false if no site data exists
+      siteOverride = false;
+      siteMode = 'system';
     }
     
-    if (isPDF()) update();
+    // Only update if it's a PDF
+    if (isPDF()) {
+      update();
+    } else {
+      // Clear any existing filters if not a PDF
+      const style = getStyle();
+      style.textContent = '';
+    }
   });
 })();

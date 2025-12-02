@@ -34,19 +34,33 @@ function sendToTab(msg) {
 }
 
 function updateTheme() {
-  const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const isDark = state.globalEnabled && systemDark;
+  // Determine if PDF is actually dark/inverted based on current state
+  let pdfIsDark = false;
   
-  document.body.style.background = isDark ? '#000000' : '#ffffff';
-  document.documentElement.style.setProperty('--fg', isDark ? '#f0f0f0' : '#1a1a1a');
-  document.documentElement.style.setProperty('--fg2', isDark ? '#f0f0f0' : '#1a1a1a');
-  document.documentElement.style.setProperty('--bg2', isDark ? '#282828' : '#e8e8e8');
-  document.documentElement.style.setProperty('--bg', isDark ? '#000000' : '#ffffff');
-  document.documentElement.style.setProperty('--bdr', isDark ? '#ffffff30' : '#00000020');
+  if (state.isPDF && state.effectivelyEnabled) {
+    // PDF is being filtered
+    const mode = state.currentMode;
+    if (mode === 'invert') {
+      // Invert mode always makes PDF dark
+      pdfIsDark = true;
+    } else if (mode === 'system') {
+      // System mode: PDF is dark only if system is dark
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      pdfIsDark = systemDark;
+    }
+  }
+  // If not filtering or not a PDF, PDF is light (default)
+  
+  document.body.style.background = pdfIsDark ? '#000000' : '#ffffff';
+  document.documentElement.style.setProperty('--fg', pdfIsDark ? '#f0f0f0' : '#1a1a1a');
+  document.documentElement.style.setProperty('--fg2', pdfIsDark ? '#f0f0f0' : '#1a1a1a');
+  document.documentElement.style.setProperty('--bg2', pdfIsDark ? '#282828' : '#e8e8e8');
+  document.documentElement.style.setProperty('--bg', pdfIsDark ? '#000000' : '#ffffff');
+  document.documentElement.style.setProperty('--bdr', pdfIsDark ? '#ffffff30' : '#00000020');
   // Universal border: light grey for both modes
   document.documentElement.style.setProperty('--key-border', '#cccccc');
   // Modifier keys: light grey bg in light mode, dark grey bg in dark mode
-  document.documentElement.style.setProperty('--mod-bg', isDark ? '#333333' : '#e0e0e0');
+  document.documentElement.style.setProperty('--mod-bg', pdfIsDark ? '#333333' : '#e0e0e0');
 }
 
 function updateUI() {
@@ -239,7 +253,13 @@ document.addEventListener('DOMContentLoaded', function() {
   $('#keybindGlobal').addEventListener('click', openChromeShortcuts);
   $('#openChromeShortcuts').addEventListener('click', openChromeShortcuts);
   
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
+  // Listen for system dark mode changes to update theme if PDF is in system mode
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+    // Only update theme if we're on a PDF and using system mode
+    if (state.isPDF && state.currentMode === 'system') {
+      updateTheme();
+    }
+  });
 
   // Listen for storage changes (when keyboard shortcuts update storage)
   chrome.storage.onChanged.addListener(function(changes, areaName) {
